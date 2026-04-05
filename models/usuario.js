@@ -13,8 +13,7 @@ const UsuarioSchema = Schema({
     required: [true, "La contraseña es obligatoria"],
   },
   rol: {
-    type: Schema.Types.ObjectId,
-    ref: "Rol",
+    type: String,
     required: [true, "El rol es obligatorio"],
   },
   fechaRegistro: { type: Date, default: Date.now },
