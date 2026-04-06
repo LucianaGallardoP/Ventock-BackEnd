@@ -56,8 +56,30 @@ const usuarioPost = async (req = request, res = response) => {
   });
 };
 
+const usuarioPut = async (req = request, res = response) => {
+  const { id } = req.params;
+
+  const { password, correo, ...resto } = req.body;
+
+  // Si actualiza el password, lo encriptamos
+  if (password) {
+    const salt = bcrypt.genSaltSync(10);
+    resto.password = bcrypt.hashSync(password, salt);
+  }
+
+  resto.correo = correo;
+
+  const usuario = await Usuario.findByIdAndUpdate(id, resto, { new: true });
+
+  res.json({
+    mensaje: "Usuario actualizado correctamente",
+    usuario,
+  });
+};
+
 module.exports = {
   usuariosGet,
   usuarioGetID,
   usuarioPost,
+  usuarioPut
 };
