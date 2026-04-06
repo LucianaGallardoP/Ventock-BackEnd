@@ -77,9 +77,43 @@ const usuarioPut = async (req = request, res = response) => {
   });
 };
 
+const usuarioInhabilitado = async (req = request, res = response) => {
+  const { id } = req.params;
+
+  try {
+    const usuarioDeshabilitado = await Usuario.findByIdAndUpdate(
+      id,
+      { estado: false },
+      { new: true },
+    );
+
+    res.json({
+      mensaje: "El usuario ha sido deshabilitado correctamente",
+      usuarioDeshabilitado,
+    });
+  } catch (error) {
+    res.json({
+      mensaje: "Error al procesar la solicitud de deshabilitacion",
+    });
+  }
+};
+
+const usuarioDelete = async (req = request, res = response) => {
+  const { id } = req.params;
+
+  const usuarioBorrado = await Usuario.findByIdAndDelete(id);
+
+  res.json({
+    mensaje: "Usuario eliminado correctamente.",
+    usuarioBorrado,
+  });
+};
+
 module.exports = {
   usuariosGet,
   usuarioGetID,
   usuarioPost,
-  usuarioPut
+  usuarioPut,
+  usuarioInhabilitado,
+  usuarioDelete
 };
