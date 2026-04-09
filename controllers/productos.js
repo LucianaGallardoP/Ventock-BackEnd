@@ -35,7 +35,7 @@ const productoGetID = async (req = request, res = response) => {
 };
 
 const productoPost = async (req = request, res = response) => {
-  const { stock, precio, iva, ganancia, categoria } = req.body;
+  const { stock, stockCritico, precio, iva, ganancia, categoria } = req.body;
   const nombre = req.body.nombre.toUpperCase();
 
   const productoDB = await Producto.findOne({ nombre });
@@ -51,11 +51,12 @@ const productoPost = async (req = request, res = response) => {
   const data = {
     nombre,
     stock,
+    stockCritico,
     precio,
     iva,
     ganancia,
+    importe: Number(importeCalculado.toFixed(2)),
     categoria,
-    importe: importeCalculado.toFixed(2),
     // usuario: req.usuario._id
   };
 
@@ -77,13 +78,17 @@ const productoPut = async (req = request, res = response) => {
     data.nombre = req.body.nombre.toUpperCase();
   }
 
-  if (data.precio || data.ganancia || data.iva) {
-    const p = data.precio || 0;
-    const g = Date.ganancia || 0;
-    const i = data.iva || 0;
-    data.importe = (p * (1 + g / 100) * (1 + i / 100)).toFixed(2);
+  if (
+    data.precio !== undefined ||
+    data.ganancia !== undefined ||
+    data.iva !== undefined
+  ) {
+    const prodActual = await Producto.findById(id);
+    const p = data.precio ?? prodActual.precio;
+    const g = data.ganancia ?? prodActual.ganancia;
+    const i = data.iva ?? prodActual.iva;
+    data.importe = Number((p * (1 + g / 100) * (1 + i / 100)).toFixed(2));
   }
-
   // data.usuario = req.usuario._id;
 
   const producto = await Producto.findByIdAndUpdate(id, data, { new: true });
