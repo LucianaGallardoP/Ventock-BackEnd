@@ -73,23 +73,28 @@ const categoriaPut = async (req = request, res = response) => {
   });
 };
 
-const categoriaInhabilitada = async (req = request, res = response) => {
+const categoriaEstado = async (req = request, res = response) => {
   const { id } = req.params;
 
   try {
-    const categoriaDeshabilitada = await Categoria.findByIdAndUpdate(
-      id,
-      { estado: false },
-      { new: true },
-    );
+    const categoria = await Categoria.findById(id);
+
+    if (!categoria) {
+      return res.json({
+        mensaje: "Categoria no encontrada",
+      });
+    }
+
+    categoria.estado = !categoria.estado;
+    await categoria.save();
 
     res.json({
-      mensaje: `La categoria ${categoriaDeshabilitada.nombre} ha sido deshabilitada correctamente`,
-      categoriaDeshabilitada,
+      mensaje: `La categoria fue ${categoria.estado ? "habilitada" : "deshabilitada"} correctamente`,
+      categoria,
     });
   } catch (error) {
     res.json({
-      mensaje: "Error al procesar la solicitud de deshabilitacion.",
+      mensaje: "Error al procesar la solicitud.",
     });
   }
 };
@@ -109,6 +114,6 @@ module.exports = {
   categoriaGetID,
   categoriaPost,
   categoriaPut,
-  categoriaInhabilitada,
+  categoriaEstado,
   categoriaDelete,
 };

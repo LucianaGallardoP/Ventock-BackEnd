@@ -5,7 +5,7 @@ const {
   categoriaGetID,
   categoriaPost,
   categoriaPut,
-  categoriaInhabilitada,
+  categoriaEstado,
   categoriaDelete,
 } = require("../controllers/categorias");
 
@@ -19,7 +19,7 @@ router.post("/", categoriaPost);
 
 router.put("/:id", categoriaPut);
 
-router.patch("/:id", categoriaInhabilitada);
+router.patch("/:id", categoriaEstado);
 
 router.delete("/:id", categoriaDelete);
 

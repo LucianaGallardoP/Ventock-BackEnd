@@ -4,7 +4,7 @@ const {
   usuariosGet,
   usuarioGetID,
   usuarioPut,
-  usuarioInhabilitado,
+  usuarioEstado,
   usuarioDelete,
 } = require("../controllers/usuarios");
 
@@ -18,7 +18,7 @@ router.post("/", usuarioPost);
 
 router.put("/:id", usuarioPut);
 
-router.patch("/:id", usuarioInhabilitado);
+router.patch("/:id", usuarioEstado);
 
 router.delete("/:id", usuarioDelete);
 
