@@ -1,19 +1,23 @@
 const { Router } = require("express");
 
-const {} = require("../controllers/ventas");
+const {
+  ventasGet,
+  ventaGetID,
+  ventaPost,
+  ventaPut,
+  anularVenta,
+} = require("../controllers/ventas");
 
 const router = Router();
 
-router.get("/");
+router.get("/", ventasGet);
 
-router.get("/:id");
+router.get("/:id", ventaGetID);
 
-router.post("/");
+router.post("/", ventaPost);
 
-router.put("/:id");
+router.put("/:id", ventaPut);
 
-router.patch("/:id");
-
-router.delete("/:id");
+router.patch("/:id", anularVenta);
 
 module.exports = router;
