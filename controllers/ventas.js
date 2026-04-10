@@ -5,19 +5,19 @@ const Venta = require("../models/venta");
 const Producto = require("../models/producto");
 
 const ventasGet = async (req = request, res = response) => {
-  const hoy = new Date();
-  hoy.setHours(0, 0, 0, 0);
+  const { desde = 0, limite = 10 } = req.query;
 
   const query = {
-    fecharegistro: { $gte: hoy },
     estado: true,
   };
 
   const [total, ventas] = await Promise.all([
     Venta.countDocuments(query),
     Venta.find(query)
+      .skip(desde)
+      .limit(limite)
       // .populate("usuario", "nombre apellido")
-      .sort({ fechaRegistro: -1 }),
+      .populate("items.producto", "nombre"),
   ]);
 
   res.json({
@@ -30,33 +30,38 @@ const ventasGet = async (req = request, res = response) => {
 const ventaGetID = async (req = request, res = response) => {
   const { id } = req.params;
 
-  const venta = await Venta.findById(id)
-    // .populate("usuario", "nombre apellido")
-    .populate("items.producto", "nombre");
+  try {
+    const venta = await Venta.findById(id)
+      // .populate("usuario", "nombre apellido")
+      .populate("items.producto", "nombre");
 
-  if (!venta) return res.json({ mensaje: "Venta no encontrada", venta });
+    if (!venta) return res.json({ mensaje: "Venta no encontrada" });
+    res.json({
+      mensaje: "Venta obtenida con exito.",
+      venta,
+    });
+  } catch (error) {
+    res.json({
+      mensaje: "El ID de la venta no es valido",
+      error: error.message,
+    });
+  }
 };
 
 const ventaPost = async (req = request, res = response) => {
   const { items, total, metodoPago } = req.body;
 
   try {
-    // 1. Validar que haya stock para todos los productos ANTES de vender
+    //Verificamos que los productos existan en la BD
     for (const item of items) {
       const productoDB = await Producto.findById(item.producto);
 
       if (!productoDB) {
         return res.json({ mensaje: `El producto ${item.nombre} no existe` });
       }
-
-      if (productoDB.stock < item.cantidad) {
-        return res.json({
-          mensaje: `Stock insuficiente para ${productoDB.nombre}. Disponible: ${productoDB.stock}`,
-        });
-      }
     }
 
-    // 2. Si todo está OK, descontar el stock de cada producto
+    // 2. Si todo está OK, descontar el stock de cada producto, permitiendo que baje a 0
     const descontarStock = items.map((item) => {
       return Producto.findByIdAndUpdate(item.producto, {
         $inc: { stock: -item.cantidad },

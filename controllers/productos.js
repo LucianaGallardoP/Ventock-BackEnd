@@ -35,7 +35,7 @@ const productoGetID = async (req = request, res = response) => {
 };
 
 const productoPost = async (req = request, res = response) => {
-  const { stock, stockCritico, precio, iva, ganancia, categoria } = req.body;
+  const { stock, stockCritico, precio, iva, ganancia, categoria} = req.body;
   const nombre = req.body.nombre.toUpperCase();
 
   const productoDB = await Producto.findOne({ nombre });
