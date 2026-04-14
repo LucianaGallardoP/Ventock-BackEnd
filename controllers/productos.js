@@ -2,7 +2,7 @@ const { request, response } = require("express");
 const Producto = require("../models/producto");
 
 const productosGet = async (req = request, res = response) => {
-  const { desde = 0, limite = 5 } = req.query;
+  const { desde = 0, limite = 20 } = req.query;
   const query = { estado: true };
 
   const [total, productos] = await Promise.all([
@@ -10,7 +10,7 @@ const productosGet = async (req = request, res = response) => {
     Producto.find(query)
       .skip(desde)
       .limit(limite)
-      // .populate("usuario", "nombre"),
+      .populate("usuario", "nombre")
       .populate("categoria", "nombre"),
   ]);
 
@@ -25,7 +25,7 @@ const productoGetID = async (req = request, res = response) => {
   const { id } = req.params;
 
   const producto = await Producto.findById(id)
-    // .populate("usuario", "nombre"),
+    .populate("usuario", "nombre")
     .populate("categoria", "nombre");
 
   res.json({
@@ -35,7 +35,7 @@ const productoGetID = async (req = request, res = response) => {
 };
 
 const productoPost = async (req = request, res = response) => {
-  const { stock, stockCritico, precio, iva, ganancia, categoria} = req.body;
+  const { stock, stockCritico, precio, iva, ganancia, categoria } = req.body;
   const nombre = req.body.nombre.toUpperCase();
 
   const productoDB = await Producto.findOne({ nombre });
@@ -57,7 +57,7 @@ const productoPost = async (req = request, res = response) => {
     ganancia,
     importe: Number(importeCalculado.toFixed(2)),
     categoria,
-    // usuario: req.usuario._id
+    usuario: req.usuario._id,
   };
 
   const producto = new Producto(data);
@@ -74,29 +74,43 @@ const productoPut = async (req = request, res = response) => {
   const { _id, estado, usuario, ...data } = req.body;
   // const usuario = req.usuario._id;
 
-  if (req.body.nombre) {
-    data.nombre = req.body.nombre.toUpperCase();
-  }
-
-  if (
-    data.precio !== undefined ||
-    data.ganancia !== undefined ||
-    data.iva !== undefined
-  ) {
+  try {
     const prodActual = await Producto.findById(id);
-    const p = data.precio ?? prodActual.precio;
-    const g = data.ganancia ?? prodActual.ganancia;
-    const i = data.iva ?? prodActual.iva;
-    data.importe = Number((p * (1 + g / 100) * (1 + i / 100)).toFixed(2));
+
+    if (!prodActual) {
+      return res.status(404).json({
+        mensaje: "No se encontro el producto para actualizar",
+      });
+    }
+
+    if (req.body.nombre) {
+      data.nombre = req.body.nombre.toUpperCase();
+    }
+
+    if (
+      data.precio !== undefined ||
+      data.ganancia !== undefined ||
+      data.iva !== undefined
+    ) {
+      const p = data.precio ?? prodActual.precio;
+      const g = data.ganancia ?? prodActual.ganancia;
+      const i = data.iva ?? prodActual.iva;
+      data.importe = Number((p * (1 + g / 100) * (1 + i / 100)).toFixed(2));
+    }
+    data.usuario = req.usuario._id;
+
+    const producto = await Producto.findByIdAndUpdate(id, data, { new: true });
+
+    res.json({
+      mensaje: "El producto se actualizo correctamente",
+      producto,
+    });
+  } catch (error) {
+    res.status(400).json({
+      mensaje: "Error al actualizar el producto.",
+      error,
+    });
   }
-  // data.usuario = req.usuario._id;
-
-  const producto = await Producto.findByIdAndUpdate(id, data, { new: true });
-
-  res.json({
-    mensaje: "El producto se actualizo correctamente",
-    producto,
-  });
 };
 
 const productoEstado = async (req = request, res = response) => {

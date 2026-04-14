@@ -11,7 +11,7 @@ const VentaSchema = Schema({
       },
       nombre: { type: String },
       cantidad: { type: Number, required: true },
-      precioUnitario: { type: Number, required: true },
+      importe: { type: Number, required: true },
       subtotal: { type: Number, required: true },
     },
   ],
@@ -24,7 +24,7 @@ const VentaSchema = Schema({
     required: [true, "El metodo de pago es obligatorio"],
     enum: ["Efectivo", "Transferencia", "Debito", "Credito"],
   },
-  // usuario: { type: Schema.Types.ObjectId, ref: "Usuario", required: true },
+  usuario: { type: Schema.Types.ObjectId, ref: "Usuario", required: true },
   fechaRegistro: { type: Date, default: Date.now },
   estado: { type: Boolean, default: true },
 });

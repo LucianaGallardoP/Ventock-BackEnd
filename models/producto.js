@@ -13,7 +13,7 @@ const ProductoSchema = Schema({
   iva: { type: Number, default: 0 },
   importe: { type: Number, required: true },
   categoria: { type: Schema.Types.ObjectId, ref: "Categoria", required: true },
-  // usuario: { type: Schema.Types.ObjectId, ref: "Usuario", required: true },
+  usuario: { type: Schema.Types.ObjectId, ref: "Usuario", required: true },
   estado: { type: Boolean, require: true, default: true },
   fechaRegistro: { type: Date, default: Date.now },
 });

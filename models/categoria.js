@@ -8,7 +8,7 @@ const CategoriaSchema = Schema({
   },
   estado: { type: Boolean, required: true, default: true },
   fechaRegistro: { type: Date, default: Date.now },
-  // usuario: { type: Schema.Types.ObjectId, ref: "Usuario", required: true },
+  usuario: { type: Schema.Types.ObjectId, ref: "Usuario", required: true },
 });
 
 module.exports = model("Categoria", CategoriaSchema);

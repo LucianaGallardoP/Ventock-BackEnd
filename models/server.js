@@ -40,6 +40,7 @@ class Server {
     this.app.use(this.categoriasPath, require("../routes/categorias"));
     this.app.use(this.productosPath, require("../routes/productos"));
     this.app.use(this.ventasPath, require("../routes/ventas"));
+    this.app.use(this.authPath, require("../routes/auth"));
   }
 
   listen() {

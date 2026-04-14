@@ -16,7 +16,7 @@ const ventasGet = async (req = request, res = response) => {
     Venta.find(query)
       .skip(desde)
       .limit(limite)
-      // .populate("usuario", "nombre apellido")
+      .populate("usuario", "nombre apellido")
       .populate("items.producto", "nombre"),
   ]);
 
@@ -32,7 +32,7 @@ const ventaGetID = async (req = request, res = response) => {
 
   try {
     const venta = await Venta.findById(id)
-      // .populate("usuario", "nombre apellido")
+      .populate("usuario", "nombre apellido")
       .populate("items.producto", "nombre");
 
     if (!venta) return res.json({ mensaje: "Venta no encontrada" });
@@ -74,7 +74,7 @@ const ventaPost = async (req = request, res = response) => {
       items,
       total,
       metodoPago,
-      // usuario:req.usuario._id
+      usuario:req.usuario._id
     };
 
     const venta = new Venta(data);
