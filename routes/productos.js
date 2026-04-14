@@ -22,7 +22,7 @@ router.get(
   [
     validarJWT,
     check("id", "El id no es valido").isMongoId(),
-    check("id".custom(productoExiste)),
+    check("id").custom(productoExiste),
     validarCampos,
   ],
   productoGetID,
