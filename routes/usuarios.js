@@ -23,7 +23,9 @@ const { validarCampos } = require("../middlewares/validarCampos");
 
 const router = Router();
 
-router.get("/", [validarJWT, esSuperAdminRole], usuariosGet);
+router.get("/", 
+  [validarJWT, esSuperAdminRole], 
+  usuariosGet);
 
 router.get(
   "/:id",
