@@ -28,7 +28,7 @@ const esAdminRole = (req = request, res = response, next) => {
 
   if (rol !== "Admin" && rol !== "SuperAdmin") {
     return res.status(401).json({
-      mensaje: `${nombre} ${apellido} es Administrador del sistema, no tiene permiso para esta accion.`,
+      mensaje: `${nombre} ${apellido} no es Administrador del sistema, no tiene permiso para esta accion.`,
     });
   }
   next();
