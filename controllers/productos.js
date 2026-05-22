@@ -6,6 +6,7 @@ const productosGet = async (req = request, res = response) => {
   const query = { estado: true };
 
   const [total, productos] = await Promise.all([
+
     Producto.countDocuments(query),
     Producto.find(query)
       .skip(desde)
@@ -58,6 +59,7 @@ const productoPost = async (req = request, res = response) => {
     importe: Number(importeCalculado.toFixed(2)),
     categoria,
     usuario: req.usuario._id,
+    fechaUltimoStock: new Date()
   };
 
   const producto = new Producto(data);
@@ -81,6 +83,10 @@ const productoPut = async (req = request, res = response) => {
       return res.status(404).json({
         mensaje: "No se encontro el producto para actualizar",
       });
+    }
+
+    if (data.stock !== undefined && Number(data.stock) !== prodActual.stock) {
+      data.fechaUltimoStock = new Date();
     }
 
     if (req.body.nombre) {
