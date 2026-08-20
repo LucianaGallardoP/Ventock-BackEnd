@@ -7,6 +7,7 @@ const ProductoSchema = Schema({
     unique: true,
   },
   stock: { type: Number, default: 0 },
+  fechaUltimoStock: { type: Date, default: Date.now },
   stockCritico: { type: Number, default: 0 },
   precio: { type: Number, default: 0 },
   ganancia: { type: Number, default: 0 },
@@ -16,6 +17,12 @@ const ProductoSchema = Schema({
   usuario: { type: Schema.Types.ObjectId, ref: "Usuario", required: true },
   estado: { type: Boolean, require: true, default: true },
   fechaRegistro: { type: Date, default: Date.now },
+});
+
+ProductoSchema.pre("save", function () {
+  if (this.isModified("stock")) {
+    this.fechaUltimoStock = Date.now();
+  }
 });
 
 module.exports = model("Producto", ProductoSchema);
