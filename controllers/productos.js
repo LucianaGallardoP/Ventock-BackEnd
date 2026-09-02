@@ -36,7 +36,7 @@ const productoGetID = async (req = request, res = response) => {
 };
 
 const productoPost = async (req = request, res = response) => {
-  const { stock, stockCritico, precio, iva, ganancia, categoria } = req.body;
+  const {codigo, stock, stockCritico, precio, iva, ganancia, categoria } = req.body;
   const nombre = req.body.nombre.toUpperCase();
 
   const productoDB = await Producto.findOne({ nombre });
@@ -46,10 +46,15 @@ const productoPost = async (req = request, res = response) => {
     });
   }
 
+  const factorIva = Number(iva) > 0 ? Number(iva) : 1;
+  const factorGanancia = Number(ganancia) > 0 ? Number(ganancia) : 1;
+  const costo = Number(precio) || 0;
+
   // Recalculamos el importe
-  const importeCalculado = precio * (1 + ganancia / 100) * (1 + iva / 100);
+  const importeCalculado = costo * factorIva * factorGanancia;
 
   const data = {
+    codigo: codigo || "",
     nombre,
     stock,
     stockCritico,
@@ -59,7 +64,8 @@ const productoPost = async (req = request, res = response) => {
     importe: Number(importeCalculado.toFixed(2)),
     categoria,
     usuario: req.usuario._id,
-    fechaUltimoStock: new Date()
+    fechaUltimoStock: new Date(),
+    fechaUltimoPrecio: new Date()
   };
 
   const producto = new Producto(data);
@@ -74,7 +80,7 @@ const productoPost = async (req = request, res = response) => {
 const productoPut = async (req = request, res = response) => {
   const { id } = req.params;
   const { _id, estado, usuario, ...data } = req.body;
-  // const usuario = req.usuario._id;
+
 
   try {
     const prodActual = await Producto.findById(id);
@@ -98,10 +104,17 @@ const productoPut = async (req = request, res = response) => {
       data.ganancia !== undefined ||
       data.iva !== undefined
     ) {
-      const p = data.precio ?? prodActual.precio;
-      const g = data.ganancia ?? prodActual.ganancia;
-      const i = data.iva ?? prodActual.iva;
-      data.importe = Number((p * (1 + g / 100) * (1 + i / 100)).toFixed(2));
+      // const p = data.precio ?? prodActual.precio;
+      // const g = data.ganancia ?? prodActual.ganancia;
+      // const i = data.iva ?? prodActual.iva;
+      // data.importe = Number((p * (1 + g / 100) * (1 + i / 100)).toFixed(2));
+    
+    const p = Number(data.precio ?? prodActual.precio) || 0;
+      const g = Number(data.ganancia ?? prodActual.ganancia) || 1;
+      const i = Number(data.iva ?? prodActual.iva) || 1;
+      
+      data.importe = Number((p * g * i).toFixed(2));
+      data.fechaUltimoPrecio = new Date();
     }
     data.usuario = req.usuario._id;
 
@@ -146,12 +159,25 @@ const productoEstado = async (req = request, res = response) => {
 
 const productoDelete = async (req = request, res = response) => {
   const { id } = req.params;
+  try {
+    const productoBorrado = await Producto.findByIdAndDelete(id);
 
-  const productoBorrado = await Producto.findByIdAndDelete(id);
-  res.json({
-    mensaje: "Producto eliminado correctamente.",
-    productoBorrado,
-  });
+    if (!productoBorrado) {
+      return res.status(404).json({
+        mensaje: "El producto no existe o ya fue eliminado.",
+      });
+    }
+
+    res.json({
+      mensaje: "Producto eliminado definitivamente de la base de datos.",
+      productoBorrado,
+    });
+  } catch (error) {
+    res.status(500).json({
+      mensaje: "Error al eliminar el producto de la base de datos.",
+      error,
+    });
+  }
 };
 
 module.exports = {
