@@ -56,8 +56,11 @@ const productoPost = async (req = request, res = response) => {
   const data = {
     codigo: codigo || "",
     nombre,
-    stock,
-    stockCritico,
+    // stock,
+    // stockCritico,
+    // Asignamos 0 si vienen vacíos o no numéricos
+    stock: stock !== "" && stock !== undefined && stock !== null ? Number(stock) : 0,
+    stockCritico: stockCritico !== "" && stockCritico !== undefined && stockCritico !== null ? Number(stockCritico) : 0,
     precio,
     iva,
     ganancia,
