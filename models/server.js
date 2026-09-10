@@ -28,7 +28,16 @@ class Server {
 
   middlewares() {
     // CORS
-    this.app.use(cors());
+    this.app.use(
+      cors({
+        origin: [
+          "https://ventock.vercel.app",
+          "http://localhost:5173",   // Entorno de desarrollo local
+        ],
+        credentials: true,
+      })
+    );
+
     // Leer lo que el usuario envia desde el front end
     this.app.use(express.json());
     // Definir una carpeta public
