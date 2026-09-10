@@ -40,29 +40,35 @@ class Server {
   //       credentials: true,
   //     })
   //   );
+  
   middlewares() {
-    const corsOptions = {
-      origin: function (origin, callback) {
-        const allowedOrigins = [
-          "https://ventock.vercel.app",
-          "http://localhost:5173",
-          "http://localhost:3001",
-        ];
+    this.app.use((req, res, next) => {
+      res.header("Access-Control-Allow-Origin", "https://ventock.vercel.app");
+      res.header(
+        "Access-Control-Allow-Headers",
+        "Origin, X-Requested-With, Content-Type, Accept, x-token, Authorization"
+      );
+      res.header(
+        "Access-Control-Allow-Methods",
+        "GET, POST, PUT, DELETE, OPTIONS"
+      );
+      res.header("Access-Control-Allow-Credentials", "true");
 
-        if (!origin || allowedOrigins.indexOf(origin) !== -1 || origin.endsWith(".vercel.app")) {
-          callback(null, true);
-        } else {
-          callback(new Error("No permitido por CORS"));
-        }
-      },
-      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-      allowedHeaders: ["Content-Type", "x-token", "Authorization"],
-      credentials: true,
-    };
+      if (req.method === "OPTIONS") {
+        return res.sendStatus(200);
+      }
 
-    this.app.use(cors(corsOptions));
+      next();
+    });
 
-    this.app.options("*", cors(corsOptions));
+    this.app.use(
+      cors({
+        origin: "https://ventock.vercel.app",
+        credentials: true,
+      })
+    );
+
+    // this.app.options("*", cors(corsOptions));
 
      // Leer lo que el usuario envia desde el front end
     this.app.use(express.json());
