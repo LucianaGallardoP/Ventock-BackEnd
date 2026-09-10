@@ -1,6 +1,7 @@
 const { Schema, model } = require("mongoose");
 
 const ProductoSchema = Schema({
+  codigo: { type: String, default: "" },
   nombre: {
     type: String,
     required: [true, "El nombre del producto es obligatorio"],
@@ -8,10 +9,11 @@ const ProductoSchema = Schema({
   },
   stock: { type: Number, default: 0 },
   fechaUltimoStock: { type: Date, default: Date.now },
+  fechaUltimoPrecio: { type: Date, default: Date.now },
   stockCritico: { type: Number, default: 0 },
   precio: { type: Number, default: 0 },
-  ganancia: { type: Number, default: 0 },
-  iva: { type: Number, default: 0 },
+  ganancia: { type: Number, default: 1 },
+  iva: { type: Number, default: 1 },
   importe: { type: Number, required: true },
   categoria: { type: Schema.Types.ObjectId, ref: "Categoria", required: true },
   usuario: { type: Schema.Types.ObjectId, ref: "Usuario", required: true },
