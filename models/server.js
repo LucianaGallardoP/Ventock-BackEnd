@@ -34,9 +34,12 @@ class Server {
           "https://ventock.vercel.app",
           "http://localhost:5173",   // Entorno de desarrollo local
         ],
+        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allowedHeaders: ["Content-Type", "x-token"],
         credentials: true,
       })
     );
+    this.app.options("*", cors());
 
     // Leer lo que el usuario envia desde el front end
     this.app.use(express.json());
