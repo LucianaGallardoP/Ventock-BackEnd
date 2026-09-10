@@ -4,6 +4,9 @@ require("dotenv").config();
 
 const server = new Server();
 
-server.listen();
+if (process.env.NODE_ENV !== "production") {
+  server.listen();
+}
+// server.listen();
 
 module.exports = server.app
