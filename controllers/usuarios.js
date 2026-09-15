@@ -23,60 +23,80 @@ const usuariosGet = async (req = request, res = response) => {
 const usuarioGetID = async (req = request, res = response) => {
   const { id } = req.params;
 
-  const usuario = await Usuario.findById(id);
+  try {
+    const usuario = await Usuario.findById(id);
 
-  res.json({
-    mensaje: "Usuario obtenido",
-    usuario,
-  });
+    if (!usuario) {
+      return res.status(404).json({ mensaje: "Usuario no encontrado" });
+    }
+
+    res.json({
+      mensaje: "Usuario obtenido",
+      usuario,
+    });
+  } catch (error) {
+    res.status(500).json({ mensaje: "Error al obtener el usuario." });
+  }
 };
 
 const usuarioPost = async (req = request, res = response) => {
   // Recibir el cuerpo de la peticion
   const datos = req.body;
 
-  const { nombre, apellido, correo, password, rol } = datos;
-  const usuario = new Usuario({
-    nombre,
-    apellido,
-    correo,
-    password,
-    rol,
-  });
+  try {
+    const { nombre, apellido, correo, password, rol } = datos;
+    const usuario = new Usuario({
+      nombre,
+      apellido,
+      correo,
+      password,
+      rol,
+    });
 
-  //   Encriptar la contraseña
-  const salt = bcrypt.genSaltSync(10);
-  const hash = bcrypt.hashSync(password, salt);
-  usuario.password = hash;
+    //   Encriptar la contraseña
+    const salt = bcrypt.genSaltSync(10);
+    const hash = bcrypt.hashSync(password, salt);
+    usuario.password = hash;
 
-  // Guardar los datos en la BD
-  await usuario.save();
+    // Guardar los datos en la BD
+    await usuario.save();
 
-  res.json({
-    mensaje: "Usuario cargado correctamente en la BD",
-    usuario,
-  });
+    res.json({
+      mensaje: "Usuario cargado correctamente en la BD",
+      usuario,
+    });
+  } catch (error) {
+    res.status(500).json({ mensaje: "Error al crear el usuario." });
+  }
 };
 
 const usuarioPut = async (req = request, res = response) => {
   const { id } = req.params;
 
-  const { password, correo, ...resto } = req.body;
+  try {
+    const { password, correo, ...resto } = req.body;
 
-  // Si actualiza el password, lo encriptamos
-  if (password) {
-    const salt = bcrypt.genSaltSync(10);
-    resto.password = bcrypt.hashSync(password, salt);
+    // Si actualiza el password, lo encriptamos
+    if (password) {
+      const salt = bcrypt.genSaltSync(10);
+      resto.password = bcrypt.hashSync(password, salt);
+    }
+
+    resto.correo = correo;
+
+    const usuario = await Usuario.findByIdAndUpdate(id, resto, { new: true });
+
+    if (!usuario) {
+      return res.status(404).json({ mensaje: "Usuario no encontrado" });
+    }
+
+    res.json({
+      mensaje: "Usuario actualizado correctamente",
+      usuario,
+    });
+  } catch (error) {
+    res.status(500).json({ mensaje: "Error al actualizar el usuario." });
   }
-
-  resto.correo = correo;
-
-  const usuario = await Usuario.findByIdAndUpdate(id, resto, { new: true });
-
-  res.json({
-    mensaje: "Usuario actualizado correctamente",
-    usuario,
-  });
 };
 
 const usuarioEstado = async (req = request, res = response) => {
@@ -86,7 +106,7 @@ const usuarioEstado = async (req = request, res = response) => {
     const usuario = await Usuario.findById(id);
 
     if (!usuario) {
-      return res.json({
+      return res.status(404).json({
         mensaje: "Usuario no encontrado",
       });
     }
@@ -95,11 +115,11 @@ const usuarioEstado = async (req = request, res = response) => {
     await usuario.save();
 
     res.json({
-      mensaje: `El usuario fue ${usuario.estado ? "habilitad0" : "deshabilitado"} correctamente`,
+      mensaje: `El usuario fue ${usuario.estado ? "habilitado" : "deshabilitado"} correctamente`,
       usuario,
     });
   } catch (error) {
-    res.json({
+    res.status(500).json({
       mensaje: "Error al procesar la solicitud",
     });
   }
@@ -108,12 +128,20 @@ const usuarioEstado = async (req = request, res = response) => {
 const usuarioDelete = async (req = request, res = response) => {
   const { id } = req.params;
 
-  const usuarioBorrado = await Usuario.findByIdAndDelete(id);
+  try {
+    const usuarioBorrado = await Usuario.findByIdAndDelete(id);
 
-  res.json({
-    mensaje: "Usuario eliminado correctamente.",
-    usuarioBorrado,
-  });
+    if (!usuarioBorrado) {
+      return res.status(404).json({ mensaje: "Usuario no encontrado" });
+    }
+
+    res.json({
+      mensaje: "Usuario eliminado correctamente.",
+      usuarioBorrado,
+    });
+  } catch (error) {
+    res.status(500).json({ mensaje: "Error al eliminar el usuario." });
+  }
 };
 
 module.exports = {
