@@ -3,8 +3,8 @@ const { request, response } = require("express");
 const Categoria = require("../models/categoria");
 
 const categoriasGet = async (req = request, res = response) => {
-  const { desde = 0, limite = 10 } = req.query;
-  const query = { estado: true };
+  const { desde = 0, limite = 10, todas } = req.query;
+  const query = todas === "true" ? {} : { estado: true };
 
   const [total, categorias] = await Promise.all([
     Categoria.countDocuments(query),
