@@ -35,13 +35,16 @@ const ventaGetID = async (req = request, res = response) => {
       .populate("usuario", "nombre apellido")
       .populate("items.producto", "nombre");
 
-    if (!venta) return res.json({ mensaje: "Venta no encontrada" });
+    if (!venta) {
+      return res.status(404).json({ mensaje: "Venta no encontrada" });
+    }
+
     res.json({
       mensaje: "Venta obtenida con exito.",
       venta,
     });
   } catch (error) {
-    res.json({
+    res.status(400).json({
       mensaje: "El ID de la venta no es valido",
       error: error.message,
     });
@@ -50,6 +53,7 @@ const ventaGetID = async (req = request, res = response) => {
 
 const ventaPost = async (req = request, res = response) => {
   const { items, total, metodoPago } = req.body;
+  let stockDescontado = false;
 
   try {
     //Verificamos que los productos existan en la BD
@@ -57,7 +61,9 @@ const ventaPost = async (req = request, res = response) => {
       const productoDB = await Producto.findById(item.producto);
 
       if (!productoDB) {
-        return res.json({ mensaje: `El producto ${item.nombre} no existe` });
+        return res
+          .status(404)
+          .json({ mensaje: `El producto ${item.nombre} no existe` });
       }
     }
 
@@ -68,6 +74,7 @@ const ventaPost = async (req = request, res = response) => {
       });
     });
     await Promise.all(descontarStock);
+    stockDescontado = true;
 
     // 3. Crear la venta comprimida
     const data = {
@@ -84,7 +91,25 @@ const ventaPost = async (req = request, res = response) => {
       mensaje: "Venta realizada con exito y stock actualizado",
     });
   } catch (error) {
-    res.json({
+    // Si ya se había descontado el stock antes de que fallara el guardado
+    // de la venta, lo devolvemos para no dejar el inventario inconsistente.
+    if (stockDescontado) {
+      try {
+        const devolverStock = items.map((item) => {
+          return Producto.findByIdAndUpdate(item.producto, {
+            $inc: { stock: item.cantidad },
+          });
+        });
+        await Promise.all(devolverStock);
+      } catch (rollbackError) {
+        console.error(
+          "Error al revertir el stock tras un fallo en la venta:",
+          rollbackError,
+        );
+      }
+    }
+
+    res.status(500).json({
       mensaje: "Error al procesar la venta",
     });
   }
@@ -94,17 +119,25 @@ const ventaPut = async (req = request, res = response) => {
   const { id } = req.params;
   const { metodoPago } = req.body;
 
-  // Solo permitimos actualizar el método de pago por seguridad
-  const venta = await Venta.findByIdAndUpdate(
-    id,
-    { metodoPago },
-    { new: true },
-  );
+  try {
+    // Solo permitimos actualizar el método de pago por seguridad
+    const venta = await Venta.findByIdAndUpdate(
+      id,
+      { metodoPago },
+      { new: true },
+    );
 
-  res.json({
-    mensaje: "El método de pago ha sido corregido",
-    venta,
-  });
+    if (!venta) {
+      return res.status(404).json({ mensaje: "Venta no encontrada" });
+    }
+
+    res.json({
+      mensaje: "El método de pago ha sido corregido",
+      venta,
+    });
+  } catch (error) {
+    res.status(500).json({ mensaje: "Error al actualizar la venta." });
+  }
 };
 
 // Solo para errores de carga inmediatos, ya que notas de credito serviran para horas o dias despues.
@@ -113,10 +146,11 @@ const anularVenta = async (req = request, res = response) => {
 
   try {
     const venta = await Venta.findById(id);
-    if (!venta || !venta.estado) {
-      return res.json({
-        mensaje: "La venta no existe o ya esta anulada",
-      });
+    if (!venta) {
+      return res.status(404).json({ mensaje: "La venta no existe" });
+    }
+    if (!venta.estado) {
+      return res.status(409).json({ mensaje: "La venta ya esta anulada" });
     }
 
     // Devolvemos el stock de TODO lo que había en la venta
@@ -135,7 +169,7 @@ const anularVenta = async (req = request, res = response) => {
       venta,
     });
   } catch (error) {
-    res.json({ mensaje: "Error al anular la venta." });
+    res.status(500).json({ mensaje: "Error al anular la venta." });
   }
 };
 
