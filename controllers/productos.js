@@ -25,59 +25,70 @@ const productosGet = async (req = request, res = response) => {
 const productoGetID = async (req = request, res = response) => {
   const { id } = req.params;
 
-  const producto = await Producto.findById(id)
-    .populate("usuario", "nombre")
-    .populate("categoria", "nombre");
+  try {
+    const producto = await Producto.findById(id)
+      .populate("usuario", "nombre")
+      .populate("categoria", "nombre");
 
-  res.json({
-    mensaje: "Producto obtenido segun lo solicitado",
-    producto,
-  });
+    if (!producto) {
+      return res.status(404).json({ mensaje: "Producto no encontrado" });
+    }
+
+    res.json({
+      mensaje: "Producto obtenido segun lo solicitado",
+      producto,
+    });
+  } catch (error) {
+    res.status(500).json({ mensaje: "Error al obtener el producto." });
+  }
 };
 
 const productoPost = async (req = request, res = response) => {
   const {codigo, stock, stockCritico, precio, iva, ganancia, categoria } = req.body;
   const nombre = req.body.nombre.toUpperCase();
 
-  const productoDB = await Producto.findOne({ nombre });
-  if (productoDB) {
-    return res.json({
-      mensaje: `El producto ${productoDB.nombre} ya existe.`,
+  try {
+    const productoDB = await Producto.findOne({ nombre });
+    if (productoDB) {
+      return res.status(409).json({
+        mensaje: `El producto ${productoDB.nombre} ya existe.`,
+      });
+    }
+
+    const factorIva = Number(iva) > 0 ? Number(iva) : 1;
+    const factorGanancia = Number(ganancia) > 0 ? Number(ganancia) : 1;
+    const costo = Number(precio) || 0;
+
+    // Recalculamos el importe
+    const importeCalculado = costo * factorIva * factorGanancia;
+
+    const data = {
+      codigo: codigo || "",
+      nombre,
+      // stock,
+      // stockCritico,
+      stock: stock !== "" && stock !== undefined && stock !== null ? Number(stock) : 0,
+      stockCritico: stockCritico !== "" && stockCritico !== undefined && stockCritico !== null ? Number(stockCritico) : 0,
+      precio,
+      iva,
+      ganancia,
+      importe: Number(importeCalculado.toFixed(2)),
+      categoria,
+      usuario: req.usuario._id,
+      fechaUltimoStock: new Date(),
+      fechaUltimoPrecio: new Date()
+    };
+
+    const producto = new Producto(data);
+    await producto.save();
+
+    res.json({
+      mensaje: "Producto creado con exito.",
+      producto,
     });
+  } catch (error) {
+    res.status(500).json({ mensaje: "Error al crear el producto." });
   }
-
-  const factorIva = Number(iva) > 0 ? Number(iva) : 1;
-  const factorGanancia = Number(ganancia) > 0 ? Number(ganancia) : 1;
-  const costo = Number(precio) || 0;
-
-  // Recalculamos el importe
-  const importeCalculado = costo * factorIva * factorGanancia;
-
-  const data = {
-    codigo: codigo || "",
-    nombre,
-    // stock,
-    // stockCritico,
-    // Asignamos 0 si vienen vacíos o no numéricos
-    stock: stock !== "" && stock !== undefined && stock !== null ? Number(stock) : 0,
-    stockCritico: stockCritico !== "" && stockCritico !== undefined && stockCritico !== null ? Number(stockCritico) : 0,
-    precio,
-    iva,
-    ganancia,
-    importe: Number(importeCalculado.toFixed(2)),
-    categoria,
-    usuario: req.usuario._id,
-    fechaUltimoStock: new Date(),
-    fechaUltimoPrecio: new Date()
-  };
-
-  const producto = new Producto(data);
-  await producto.save();
-
-  res.json({
-    mensaje: "Producto creado con exito.",
-    producto,
-  });
 };
 
 const productoPut = async (req = request, res = response) => {
@@ -107,10 +118,6 @@ const productoPut = async (req = request, res = response) => {
       data.ganancia !== undefined ||
       data.iva !== undefined
     ) {
-      // const p = data.precio ?? prodActual.precio;
-      // const g = data.ganancia ?? prodActual.ganancia;
-      // const i = data.iva ?? prodActual.iva;
-      // data.importe = Number((p * (1 + g / 100) * (1 + i / 100)).toFixed(2));
     
     const p = Number(data.precio ?? prodActual.precio) || 0;
       const g = Number(data.ganancia ?? prodActual.ganancia) || 1;
@@ -142,7 +149,7 @@ const productoEstado = async (req = request, res = response) => {
     const producto = await Producto.findById(id);
 
     if (!producto) {
-      return res.json({
+      return res.status(404).json({
         mensaje: "Producto no encontrado",
       });
     }
@@ -152,9 +159,10 @@ const productoEstado = async (req = request, res = response) => {
 
     res.json({
       mensaje: `El producto fue ${producto.estado ? "habilitado" : "deshabilitado"} correctamente`,
+      producto,
     });
   } catch (error) {
-    res.json({
+    res.status(500).json({
       mensaje: "Error al procesar la solicitud",
     });
   }
