@@ -25,20 +25,35 @@ class Server {
     this.errorHandling();
   }
   
+  obtenerOrigenesPermitidos() {
+    const origenesDesdeEnv = (process.env.CORS_ORIGINS || "")
+      .split(",")
+      .map((origen) => origen.trim())
+      .filter(Boolean);
+
+    const origenes =
+      origenesDesdeEnv.length > 0
+        ? origenesDesdeEnv
+        : ["https://ventock.vercel.app"];
+
+    if (process.env.NODE_ENV !== "production") {
+      origenes.push("http://localhost:5173", "http://localhost:3000");
+    }
+
+    return origenes;
+  }
+
   middlewares() {
     // 1. Interceptor de CORS y Preflight
+    const allowedOrigins = this.obtenerOrigenesPermitidos();
+
     this.app.use((req, res, next) => {
-      const allowedOrigins = [
-        "https://ventock.vercel.app",
-        "http://localhost:5173",
-        "http://localhost:3000"
-      ];
       const origin = req.headers.origin;
 
       if (allowedOrigins.includes(origin)) {
         res.setHeader("Access-Control-Allow-Origin", origin);
       } else {
-        res.setHeader("Access-Control-Allow-Origin", "https://ventock.vercel.app");
+        res.setHeader("Access-Control-Allow-Origin", allowedOrigins[0]);
       }
 
       res.setHeader("Access-Control-Allow-Credentials", "true");
