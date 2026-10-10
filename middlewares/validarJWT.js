@@ -1,15 +1,14 @@
 const { request, response } = require("express");
 const jwt = require("jsonwebtoken");
 const Usuario = require("../models/usuario");
+const AppError = require("../helpers/AppError");
 
 const validarJWT = async (req = request, res = response, next) => {
   const token = req.header("x-token");
 
   //   Si no hay token
   if (!token) {
-    return res.status(400).json({
-      mensaje: "No hay token en la peticion.",
-    });
+    return next(new AppError("No hay token en la peticion.", 400));
   }
 
   // Si si hay token
@@ -22,25 +21,18 @@ const validarJWT = async (req = request, res = response, next) => {
 
     // Validamos si existe
     if (!usuario) {
-      return res.status(401).json({
-        mensaje: "Token no valido - usuario no existe.",
-      });
+      return next(new AppError("Token no valido - usuario no existe.", 401));
     }
     // Validamos si esta activo
     if (!usuario.estado) {
-      return res.status(401).json({
-        mensaje: "Token no valido - usuario inactivo.",
-      });
+      return next(new AppError("Token no valido - usuario inactivo.", 401));
     }
 
     req.usuario = usuario;
 
     next();
   } catch (error) {
-    console.log(error);
-    res.status(401).json({
-      mensaje: "Token no valido",
-    });
+    next(new AppError("Token no valido", 401));
   }
 };
 
