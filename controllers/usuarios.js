@@ -55,6 +55,7 @@ const usuarioPost = async (req = request, res = response) => {
 
   // Guardar los datos en la BD
   await usuario.save();
+  usuario.password = undefined;
 
   res.json({
     mensaje: "Usuario cargado correctamente en la BD",
