@@ -21,8 +21,7 @@ router.get(
   "/:id",
   [
     validarJWT,
-    check("id", "El id no es valido").isMongoId(),
-    check("id").custom(ventaExiste),
+    check("id", "El id no es valido").isMongoId().bail().custom(ventaExiste),
     validarCampos,
   ],
   ventaGetID,
@@ -66,8 +65,7 @@ router.put(
   [
     validarJWT,
     esAdminRole,
-    check("id", "El id no es valido").isMongoId(),
-    check("id").custom(ventaExiste),
+    check("id", "El id no es valido").isMongoId().bail().custom(ventaExiste),
     check("metodoPago", `El metodo de pago debe ser uno de: ${METODOS_PAGO}`)
       .notEmpty()
       .isIn(METODOS_PAGO),
@@ -81,8 +79,7 @@ router.patch(
   [
     validarJWT,
     esAdminRole,
-    check("id", "El id no es valido").isMongoId(),
-    check("id").custom(ventaExiste),
+    check("id", "El id no es valido").isMongoId().bail().custom(ventaExiste),
     validarCampos,
   ],
   anularVenta,
