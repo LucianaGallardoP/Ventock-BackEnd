@@ -1,6 +1,8 @@
 const express = require("express");
 const cors = require("cors");
 const { dbConnection } = require("../database/config");
+const AppError = require("../helpers/AppError");
+const { notFound, errorHandler } = require("../middlewares/errorHandler");
 
 class Server {
   constructor() {
@@ -12,19 +14,16 @@ class Server {
     this.productosPath = "/api/productos";
     this.ventasPath = "/api/ventas";
 
-    // Conectar con BD
-    // this.conectarDB();
 
     // Middlewares
     this.middlewares();
 
     // Funcion para rutas
     this.routes();
-  }
 
-  // async conectarDB() {
-  //   await dbConnection();
-  // }
+    // Manejo de errores
+    this.errorHandling();
+  }
   
   middlewares() {
     // 1. Interceptor de CORS y Preflight
@@ -64,8 +63,7 @@ class Server {
         await dbConnection();
         next();
       } catch (error) {
-        console.error("Error al conectar a la BD:", error);
-        res.status(500).json({ msg: "Error de conexión en el servidor" });
+        next(new AppError("Error de conexión con la base de datos.", 500));
       }
     });
 
@@ -82,6 +80,13 @@ class Server {
     this.app.use(this.productosPath, require("../routes/productos"));
     this.app.use(this.ventasPath, require("../routes/ventas"));
     this.app.use(this.authPath, require("../routes/auth"));
+  }
+
+  errorHandling() {
+    // Cualquier ruta no definida(404)
+    this.app.use(notFound);
+    // Middleware de error global
+    this.app.use(errorHandler);
   }
 
   listen() {
