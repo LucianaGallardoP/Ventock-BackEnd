@@ -10,10 +10,7 @@ const {
   usuarioDelete,
 } = require("../controllers/usuarios");
 const { validarJWT } = require("../middlewares/validarJWT");
-const {
-  esSuperAdminRole,
-  esAdminRole,
-} = require("../middlewares/validarRoles");
+const { esSuperAdminRole } = require("../middlewares/validarRoles");
 const {
   usuarioExiste,
   emailExiste,
@@ -31,6 +28,8 @@ router.get("/",
 router.get(
   "/:id",
   [
+    validarJWT,
+    esSuperAdminRole,
     check("id", "El id no es valido").isMongoId().bail().custom(usuarioExiste),
     validarCampos,
   ],
@@ -40,6 +39,8 @@ router.get(
 router.post(
   "/",
   [
+    validarJWT,
+    esSuperAdminRole,
     check("nombre", "El nombre es obligatorio").isString().trim().notEmpty(),
     check("apellido", "El apellido es obligatorio")
       .isString()
@@ -68,6 +69,7 @@ router.put(
   "/:id",
   [
     validarJWT,
+    esSuperAdminRole,
     check("id", "No es un id valido").isMongoId().bail().custom(usuarioExiste),
     check("nombre", "El nombre no puede estar vacio")
       .optional()
@@ -103,7 +105,7 @@ router.patch(
   "/:id",
   [
     validarJWT,
-    esAdminRole,
+    esSuperAdminRole,
     check("id", "No es un id valido").isMongoId().bail().custom(usuarioExiste),
     validarCampos,
   ],
@@ -114,7 +116,7 @@ router.delete(
   "/:id",
   [
     validarJWT,
-    esAdminRole,
+    esSuperAdminRole,
     check("id", "No es un id valido").isMongoId().bail().custom(usuarioExiste),
     validarCampos,
   ],
