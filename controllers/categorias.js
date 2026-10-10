@@ -2,6 +2,7 @@ const { request, response } = require("express");
 
 const Categoria = require("../models/categoria");
 const AppError = require("../helpers/AppError");
+const { textoRequerido } = require("../helpers/sanitize");
 
 const categoriasGet = async (req = request, res = response) => {
   const { desde = 0, limite = 10, todas } = req.query;
@@ -41,7 +42,10 @@ const categoriaGetID = async (req = request, res = response) => {
 };
 
 const categoriaPost = async (req = request, res = response) => {
-  const nombre = req.body.nombre.toUpperCase();
+  const nombre = textoRequerido(
+    req.body.nombre,
+    "El nombre de la categoria",
+  ).toUpperCase();
 
   // Verificamos si la cat existe
   const categoriaDB = await Categoria.findOne({ nombre });
@@ -69,7 +73,10 @@ const categoriaPost = async (req = request, res = response) => {
 
 const categoriaPut = async (req = request, res = response) => {
   const { id } = req.params;
-  const nombre = req.body.nombre.toUpperCase();
+  const nombre = textoRequerido(
+    req.body.nombre,
+    "El nombre de la categoria",
+  ).toUpperCase();
   const usuario = req.usuario._id;
 
   const data = { nombre, usuario };
