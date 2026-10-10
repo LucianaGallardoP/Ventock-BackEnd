@@ -1,10 +1,10 @@
 const { request, response } = require("express");
+const mongoose = require("mongoose");
 
 const Venta = require("../models/venta");
 
 const Producto = require("../models/producto");
 const AppError = require("../helpers/AppError");
-const { logError } = require("../helpers/logger");
 
 const ventasGet = async (req = request, res = response) => {
   const { desde = 0, limite = 10 } = req.query;
@@ -48,60 +48,52 @@ const ventaGetID = async (req = request, res = response) => {
 
 const ventaPost = async (req = request, res = response) => {
   const { items, total, metodoPago } = req.body;
-  let stockDescontado = false;
+
+  const session = await mongoose.startSession();
 
   try {
-    //Verificamos que los productos existan en la BD
-    for (const item of items) {
-      const productoDB = await Producto.findById(item.producto);
+    await session.withTransaction(async () => {
+      for (const item of items) {
+        const productoActualizado = await Producto.findOneAndUpdate(
+          { _id: item.producto, stock: { $gte: item.cantidad } },
+          { $inc: { stock: -item.cantidad } },
+          { new: true, session },
+        );
 
-      if (!productoDB) {
-        throw new AppError(`El producto ${item.nombre} no existe`, 404);
+        if (!productoActualizado) {
+          const existe = await Producto.findById(item.producto).session(
+            session,
+          );
+
+          if (!existe) {
+            throw new AppError(`El producto ${item.nombre} no existe`, 404);
+          }
+
+          throw new AppError(
+            `Stock insuficiente para "${existe.nombre}" (disponible: ${existe.stock}, pedido: ${item.cantidad})`,
+            409,
+          );
+        }
       }
-    }
+      const data = {
+        items,
+        total,
+        metodoPago,
+        usuario: req.usuario._id,
+      };
 
-    // 2. Si todo está OK, descontar el stock de cada producto, permitiendo que baje a 0
-    const descontarStock = items.map((item) => {
-      return Producto.findByIdAndUpdate(item.producto, {
-        $inc: { stock: -item.cantidad },
-      });
+      await Venta.create([data], { session });
     });
-    await Promise.all(descontarStock);
-    stockDescontado = true;
-
-    // 3. Crear la venta comprimida
-    const data = {
-      items,
-      total,
-      metodoPago,
-      usuario: req.usuario._id,
-    };
-
-    const venta = new Venta(data);
-    await venta.save();
 
     res.json({
       mensaje: "Venta realizada con exito y stock actualizado",
     });
   } catch (error) {
-    // Si ya se había descontado el stock antes de que fallara el guardado
-    // de la venta, lo devolvemos para no dejar el inventario inconsistente.
-    if (stockDescontado) {
-      try {
-        const devolverStock = items.map((item) => {
-          return Producto.findByIdAndUpdate(item.producto, {
-            $inc: { stock: item.cantidad },
-          });
-        });
-        await Promise.all(devolverStock);
-      } catch (rollbackError) {
-        logError(rollbackError, req);
-      }
-    }
-
     throw error instanceof AppError
       ? error
       : new AppError("Error al procesar la venta", 500);
+  } finally {
+    await session.endSession();
   }
 };
 
@@ -128,29 +120,43 @@ const ventaPut = async (req = request, res = response) => {
 const anularVenta = async (req = request, res = response) => {
   const { id } = req.params;
 
-  const venta = await Venta.findById(id);
-  if (!venta) {
-    throw new AppError("La venta no existe", 404);
-  }
-  if (!venta.estado) {
-    throw new AppError("La venta ya esta anulada", 409);
-  }
+  const session = await mongoose.startSession();
 
-  // Devolvemos el stock de TODO lo que había en la venta
-  const devolverStock = venta.items.map((item) => {
-    return Producto.findByIdAndUpdate(item.producto, {
-      $inc: { stock: item.cantidad },
+  try {
+    await session.withTransaction(async () => {
+      const venta = await Venta.findById(id).session(session);
+      if (!venta) {
+        throw new AppError("La venta no existe", 404);
+      }
+      if (!venta.estado) {
+        throw new AppError("La venta ya esta anulada", 409);
+      }
+
+      const devolverStock = venta.items.map((item) =>
+        Producto.findByIdAndUpdate(
+          item.producto,
+          { $inc: { stock: item.cantidad } },
+          { session },
+        ),
+      );
+      await Promise.all(devolverStock);
+
+      venta.estado = false;
+      await venta.save({ session });
     });
-  });
-  await Promise.all(devolverStock);
 
-  venta.estado = false;
-  await venta.save();
-
-  res.json({
-    mensaje: "Venta anulada por error de carga. Stock restaurado.",
-    venta,
-  });
+    const venta = await Venta.findById(id);
+    res.json({
+      mensaje: "Venta anulada por error de carga. Stock restaurado.",
+      venta,
+    });
+  } catch (error) {
+    throw error instanceof AppError
+      ? error
+      : new AppError("Error al anular la venta.", 500);
+  } finally {
+    await session.endSession();
+  }
 };
 
 module.exports = {
