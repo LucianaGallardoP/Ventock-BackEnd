@@ -7,7 +7,8 @@ const Producto = require("../models/producto");
 const AppError = require("../helpers/AppError");
 
 const ventasGet = async (req = request, res = response) => {
-  const { desde = 0, limite = 10 } = req.query;
+  const desde = Number(req.query.desde ?? 0);
+  const limite = Number(req.query.limite ?? 10);
 
   const query = {
     estado: true,
