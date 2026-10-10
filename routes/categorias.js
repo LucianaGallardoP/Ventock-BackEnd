@@ -16,7 +16,7 @@ const { esAdminRole } = require("../middlewares/validarRoles");
 
 const router = Router();
 
-router.get("/", 
+router.get("/",
   [validarJWT],
   categoriasGet);
 
@@ -24,8 +24,7 @@ router.get(
   "/:id",
   [
     validarJWT,
-    check("id", "El id no es valido").isMongoId(),
-    check("id").custom(categoriaExiste),
+    check("id", "El id no es valido").isMongoId().bail().custom(categoriaExiste),
     validarCampos,
   ],
   categoriaGetID,
@@ -36,7 +35,10 @@ router.post(
   [
     validarJWT,
     esAdminRole,
-    check("nombre", "El nombre de la categoria es obligatorio").notEmpty(),
+    check("nombre", "El nombre de la categoria es obligatorio")
+      .isString()
+      .trim()
+      .notEmpty(),
     validarCampos,
   ],
   categoriaPost,
@@ -47,8 +49,11 @@ router.put(
   [
     validarJWT,
     esAdminRole,
-    check("id", "El id no es valido").isMongoId(),
-    check("id").custom(categoriaExiste),
+    check("id", "El id no es valido").isMongoId().bail().custom(categoriaExiste),
+    check("nombre", "El nombre de la categoria es obligatorio")
+      .isString()
+      .trim()
+      .notEmpty(),
     validarCampos,
   ],
   categoriaPut,
@@ -59,8 +64,7 @@ router.patch(
   [
     validarJWT,
     esAdminRole,
-    check("id", "El id no es valido").isMongoId(),
-    check("id").custom(categoriaExiste),
+    check("id", "El id no es valido").isMongoId().bail().custom(categoriaExiste),
     validarCampos,
   ],
   categoriaEstado,
@@ -71,8 +75,7 @@ router.delete(
   [
     validarJWT,
     esAdminRole,
-    check("id", "El id no es valido").isMongoId(),
-    check("id").custom(categoriaExiste),
+    check("id", "El id no es valido").isMongoId().bail().custom(categoriaExiste),
     validarCampos,
   ],
   categoriaDelete,
