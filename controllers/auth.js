@@ -7,7 +7,7 @@ const AppError = require("../helpers/AppError");
 const login = async (req = request, res = response) => {
   const { correo, password } = req.body;
 
-  const usuario = await Usuario.findOne({ correo });
+  const usuario = await Usuario.findOne({ correo }).select("+password");
 
   //Verificamos si el correo existe
   if (!usuario) {
@@ -36,6 +36,7 @@ const login = async (req = request, res = response) => {
 
   // Generamos el token
   const token = await generarJWT(usuario.id);
+  usuario.password = undefined;
   res.json({
     mensaje: "Usuario logueado con exito",
     usuario,
