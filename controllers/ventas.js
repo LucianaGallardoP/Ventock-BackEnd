@@ -3,6 +3,8 @@ const { request, response } = require("express");
 const Venta = require("../models/venta");
 
 const Producto = require("../models/producto");
+const AppError = require("../helpers/AppError");
+const { logError } = require("../helpers/logger");
 
 const ventasGet = async (req = request, res = response) => {
   const { desde = 0, limite = 10 } = req.query;
@@ -30,25 +32,18 @@ const ventasGet = async (req = request, res = response) => {
 const ventaGetID = async (req = request, res = response) => {
   const { id } = req.params;
 
-  try {
-    const venta = await Venta.findById(id)
-      .populate("usuario", "nombre apellido")
-      .populate("items.producto", "nombre");
+  const venta = await Venta.findById(id)
+    .populate("usuario", "nombre apellido")
+    .populate("items.producto", "nombre");
 
-    if (!venta) {
-      return res.status(404).json({ mensaje: "Venta no encontrada" });
-    }
-
-    res.json({
-      mensaje: "Venta obtenida con exito.",
-      venta,
-    });
-  } catch (error) {
-    res.status(400).json({
-      mensaje: "El ID de la venta no es valido",
-      error: error.message,
-    });
+  if (!venta) {
+    throw new AppError("Venta no encontrada", 404);
   }
+
+  res.json({
+    mensaje: "Venta obtenida con exito.",
+    venta,
+  });
 };
 
 const ventaPost = async (req = request, res = response) => {
@@ -61,9 +56,7 @@ const ventaPost = async (req = request, res = response) => {
       const productoDB = await Producto.findById(item.producto);
 
       if (!productoDB) {
-        return res
-          .status(404)
-          .json({ mensaje: `El producto ${item.nombre} no existe` });
+        throw new AppError(`El producto ${item.nombre} no existe`, 404);
       }
     }
 
@@ -81,7 +74,7 @@ const ventaPost = async (req = request, res = response) => {
       items,
       total,
       metodoPago,
-      usuario:req.usuario._id
+      usuario: req.usuario._id,
     };
 
     const venta = new Venta(data);
@@ -102,16 +95,13 @@ const ventaPost = async (req = request, res = response) => {
         });
         await Promise.all(devolverStock);
       } catch (rollbackError) {
-        console.error(
-          "Error al revertir el stock tras un fallo en la venta:",
-          rollbackError,
-        );
+        logError(rollbackError, req);
       }
     }
 
-    res.status(500).json({
-      mensaje: "Error al procesar la venta",
-    });
+    throw error instanceof AppError
+      ? error
+      : new AppError("Error al procesar la venta", 500);
   }
 };
 
@@ -119,58 +109,48 @@ const ventaPut = async (req = request, res = response) => {
   const { id } = req.params;
   const { metodoPago } = req.body;
 
-  try {
-    // Solo permitimos actualizar el método de pago por seguridad
-    const venta = await Venta.findByIdAndUpdate(
-      id,
-      { metodoPago },
-      { new: true },
-    );
+  const venta = await Venta.findByIdAndUpdate(
+    id,
+    { metodoPago },
+    { new: true },
+  );
 
-    if (!venta) {
-      return res.status(404).json({ mensaje: "Venta no encontrada" });
-    }
-
-    res.json({
-      mensaje: "El método de pago ha sido corregido",
-      venta,
-    });
-  } catch (error) {
-    res.status(500).json({ mensaje: "Error al actualizar la venta." });
+  if (!venta) {
+    throw new AppError("Venta no encontrada", 404);
   }
+
+  res.json({
+    mensaje: "El método de pago ha sido corregido",
+    venta,
+  });
 };
 
-// Solo para errores de carga inmediatos, ya que notas de credito serviran para horas o dias despues.
 const anularVenta = async (req = request, res = response) => {
   const { id } = req.params;
 
-  try {
-    const venta = await Venta.findById(id);
-    if (!venta) {
-      return res.status(404).json({ mensaje: "La venta no existe" });
-    }
-    if (!venta.estado) {
-      return res.status(409).json({ mensaje: "La venta ya esta anulada" });
-    }
-
-    // Devolvemos el stock de TODO lo que había en la venta
-    const devolverStock = venta.items.map((item) => {
-      return Producto.findByIdAndUpdate(item.producto, {
-        $inc: { stock: item.cantidad },
-      });
-    });
-    await Promise.all(devolverStock);
-
-    venta.estado = false;
-    await venta.save();
-
-    res.json({
-      mensaje: "Venta anulada por error de carga. Stock restaurado.",
-      venta,
-    });
-  } catch (error) {
-    res.status(500).json({ mensaje: "Error al anular la venta." });
+  const venta = await Venta.findById(id);
+  if (!venta) {
+    throw new AppError("La venta no existe", 404);
   }
+  if (!venta.estado) {
+    throw new AppError("La venta ya esta anulada", 409);
+  }
+
+  // Devolvemos el stock de TODO lo que había en la venta
+  const devolverStock = venta.items.map((item) => {
+    return Producto.findByIdAndUpdate(item.producto, {
+      $inc: { stock: item.cantidad },
+    });
+  });
+  await Promise.all(devolverStock);
+
+  venta.estado = false;
+  await venta.save();
+
+  res.json({
+    mensaje: "Venta anulada por error de carga. Stock restaurado.",
+    venta,
+  });
 };
 
 module.exports = {
