@@ -28,12 +28,34 @@ router.get(
   ventaGetID,
 );
 
+const METODOS_PAGO = ["Efectivo", "Transferencia", "Debito", "Credito"];
+
 router.post(
   "/",
   [
     validarJWT,
-    check("total", "El total de la venta es obligatorio").notEmpty(),
-    check("metodoPago", "El metodo de pago es obligatorio").notEmpty(),
+    check("total", "El total de la venta es obligatorio")
+      .notEmpty()
+      .isFloat({ min: 0 }),
+    check("metodoPago", `El metodo de pago debe ser uno de: ${METODOS_PAGO}`)
+      .notEmpty()
+      .isIn(METODOS_PAGO),
+    check("items", "La venta debe tener al menos un producto").isArray({
+      min: 1,
+    }),
+    check("items.*.producto", "El id del producto no es valido").isMongoId(),
+    check(
+      "items.*.cantidad",
+      "La cantidad de cada producto debe ser mayor a 0",
+    ).isFloat({ gt: 0 }),
+    check(
+      "items.*.importe",
+      "El importe de cada producto debe ser un numero valido",
+    ).isFloat({ min: 0 }),
+    check(
+      "items.*.subtotal",
+      "El subtotal de cada producto debe ser un numero valido",
+    ).isFloat({ min: 0 }),
     validarCampos,
   ],
   ventaPost,
@@ -46,6 +68,9 @@ router.put(
     esAdminRole,
     check("id", "El id no es valido").isMongoId(),
     check("id").custom(ventaExiste),
+    check("metodoPago", `El metodo de pago debe ser uno de: ${METODOS_PAGO}`)
+      .notEmpty()
+      .isIn(METODOS_PAGO),
     validarCampos,
   ],
   ventaPut,
