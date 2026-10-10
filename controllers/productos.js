@@ -1,6 +1,7 @@
 const { request, response } = require("express");
 const Producto = require("../models/producto");
 const AppError = require("../helpers/AppError");
+const { textoRequerido } = require("../helpers/sanitize");
 
 const productosGet = async (req = request, res = response) => {
   const { desde = 0, limite = 20 } = req.query;
@@ -42,7 +43,10 @@ const productoGetID = async (req = request, res = response) => {
 const productoPost = async (req = request, res = response) => {
   const { codigo, stock, stockCritico, precio, iva, ganancia, categoria } =
     req.body;
-  const nombre = req.body.nombre.toUpperCase();
+  const nombre = textoRequerido(
+    req.body.nombre,
+    "El nombre del producto",
+  ).toUpperCase();
 
   const productoDB = await Producto.findOne({ nombre });
   if (productoDB) {
@@ -101,8 +105,11 @@ const productoPut = async (req = request, res = response) => {
     data.fechaUltimoStock = new Date();
   }
 
-  if (req.body.nombre) {
-    data.nombre = req.body.nombre.toUpperCase();
+  if (req.body.nombre !== undefined) {
+    data.nombre = textoRequerido(
+      req.body.nombre,
+      "El nombre del producto",
+    ).toUpperCase();
   }
 
   if (

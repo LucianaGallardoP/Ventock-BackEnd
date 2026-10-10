@@ -21,8 +21,7 @@ router.get(
   "/:id",
   [
     validarJWT,
-    check("id", "El id no es valido").isMongoId(),
-    check("id").custom(productoExiste),
+    check("id", "El id no es valido").isMongoId().bail().custom(productoExiste),
     validarCampos,
   ],
   productoGetID,
@@ -33,11 +32,13 @@ router.post(
   [
     validarJWT,
     esAdminRole,
-    check("nombre", "El nombre es obligatorio").notEmpty(),
-    check("categoria", "La categoria es obligatoria").notEmpty(),
-    check("categoria", "La categoria no es valida").isMongoId(),
-    check("categoria").custom(categoriaExiste),
-    check("codigo", "El codigo debe ser texto").optional().isString(),
+    check("nombre", "El nombre es obligatorio").isString().trim().notEmpty(),
+    check("categoria", "La categoria no es valida")
+      .notEmpty()
+      .isMongoId()
+      .bail()
+      .custom(categoriaExiste),
+    check("codigo", "El codigo debe ser texto").optional().isString().trim(),
     check("stock", "El stock debe ser un numero mayor o igual a 0")
       .optional()
       .isFloat({ min: 0 }),
@@ -66,12 +67,18 @@ router.put(
   [
     validarJWT,
     esAdminRole,
-    check("id", "El id no es valido").isMongoId(),
-    check("id").custom(productoExiste),
-    check("nombre", "El nombre no puede estar vacio").optional().notEmpty(),
-    check("categoria", "La categoria no es valida").optional().isMongoId(),
-    check("categoria").optional().custom(categoriaExiste),
-    check("codigo", "El codigo debe ser texto").optional().isString(),
+    check("id", "El id no es valido").isMongoId().bail().custom(productoExiste),
+    check("nombre", "El nombre no puede estar vacio")
+      .optional()
+      .isString()
+      .trim()
+      .notEmpty(),
+    check("categoria", "La categoria no es valida")
+      .optional()
+      .isMongoId()
+      .bail()
+      .custom(categoriaExiste),
+    check("codigo", "El codigo debe ser texto").optional().isString().trim(),
     check("stock", "El stock debe ser un numero mayor o igual a 0")
       .optional()
       .isFloat({ min: 0 }),
@@ -100,8 +107,7 @@ router.patch(
   [
     validarJWT,
     esAdminRole,
-    check("id", "El id no es valido").isMongoId(),
-    check("id").custom(productoExiste),
+    check("id", "El id no es valido").isMongoId().bail().custom(productoExiste),
     validarCampos,
   ],
   productoEstado,
@@ -112,8 +118,7 @@ router.delete(
   [
     validarJWT,
     esAdminRole,
-    check("id", "El id no es valido").isMongoId(),
-    check("id").custom(productoExiste),
+    check("id", "El id no es valido").isMongoId().bail().custom(productoExiste),
     validarCampos,
   ],
   productoDelete,
