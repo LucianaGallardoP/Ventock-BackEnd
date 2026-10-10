@@ -17,6 +17,7 @@ const {
 const {
   usuarioExiste,
   emailExiste,
+  emailExisteOtroUsuario,
   esRolValido,
 } = require("../helpers/db-validator");
 const { validarCampos } = require("../middlewares/validarCampos");
@@ -44,6 +45,7 @@ router.post(
   [
     check("nombre", "El nombre es obligatorio").notEmpty(),
     check("apellido", "El apellido es obligatorio").notEmpty(),
+    check("correo", "El correo no es valido").isEmail(),
     check("correo").custom(emailExiste),
     check(
       "password",
@@ -61,6 +63,18 @@ router.put(
     validarJWT,
     check("id", "No es un id valido").isMongoId(),
     check("id").custom(usuarioExiste),
+    check("nombre", "El nombre no puede estar vacio")
+      .optional()
+      .notEmpty(),
+    check("apellido", "El apellido no puede estar vacio")
+      .optional()
+      .notEmpty(),
+    check("correo", "El correo no es valido").optional().isEmail(),
+    check("correo").optional().custom(emailExisteOtroUsuario),
+    check("password", "La contraseña debe tener un minimo de 8 caracteres")
+      .optional()
+      .isLength({ min: 8 }),
+    check("rol").optional().custom(esRolValido),
     validarCampos,
   ],
   usuarioPut,
