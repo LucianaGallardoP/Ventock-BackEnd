@@ -18,12 +18,15 @@ const {
   esRolValido,
 } = require("../helpers/db-validator");
 const { validarCampos } = require("../middlewares/validarCampos");
+const { validarPaginacion } = require("../middlewares/validarPaginacion");
 
 const router = Router();
 
-router.get("/",
-  [validarJWT, esSuperAdminRole],
-  usuariosGet);
+router.get(
+  "/",
+  [validarJWT, esSuperAdminRole, ...validarPaginacion, validarCampos],
+  usuariosGet,
+);
 
 router.get(
   "/:id",

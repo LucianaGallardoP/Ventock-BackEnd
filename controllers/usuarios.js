@@ -4,8 +4,8 @@ const Usuario = require("../models/usuario");
 const AppError = require("../helpers/AppError");
 
 const usuariosGet = async (req = request, res = response) => {
-  const desde = parseInt(req.query.desde, 10) || 0;
-  const limite = parseInt(req.query.limite, 10) || 10;
+  const desde = Number(req.query.desde ?? 0);
+  const limite = Number(req.query.limite ?? 10);
   const query = {};
 
   const [total, usuarios] = await Promise.all([
