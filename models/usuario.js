@@ -1,12 +1,23 @@
 const { Schema, model } = require("mongoose");
 
 const UsuarioSchema = Schema({
-  nombre: { type: String, required: [true, "El nombre es obligatorio"] },
-  apellido: { type: String, required: [true, "El apellido es obligatorio"] },
+  nombre: {
+    type: String,
+    required: [true, "El nombre es obligatorio"],
+    trim: true,
+    maxlength: 100,
+  },
+  apellido: {
+    type: String,
+    required: [true, "El apellido es obligatorio"],
+    trim: true,
+    maxlength: 100,
+  },
   correo: {
     type: String,
     required: [true, "El correo es obligatorio"],
     unique: true,
+    trim: true,
   },
   password: {
     type: String,

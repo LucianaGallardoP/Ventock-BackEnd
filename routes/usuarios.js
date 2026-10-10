@@ -24,17 +24,14 @@ const { validarCampos } = require("../middlewares/validarCampos");
 
 const router = Router();
 
-router.get("/", 
-  [validarJWT, esSuperAdminRole], 
+router.get("/",
+  [validarJWT, esSuperAdminRole],
   usuariosGet);
 
 router.get(
   "/:id",
   [
-    check("id", "El id no es valido").isMongoId(),
-
-    check("id").custom(usuarioExiste),
-
+    check("id", "El id no es valido").isMongoId().bail().custom(usuarioExiste),
     validarCampos,
   ],
   usuarioGetID,
@@ -43,15 +40,25 @@ router.get(
 router.post(
   "/",
   [
-    check("nombre", "El nombre es obligatorio").notEmpty(),
-    check("apellido", "El apellido es obligatorio").notEmpty(),
-    check("correo", "El correo no es valido").isEmail(),
-    check("correo").custom(emailExiste),
+    check("nombre", "El nombre es obligatorio").isString().trim().notEmpty(),
+    check("apellido", "El apellido es obligatorio")
+      .isString()
+      .trim()
+      .notEmpty(),
+    check("correo", "El correo no es valido")
+      .isString()
+      .trim()
+      .isEmail()
+      .bail()
+      .custom(emailExiste),
     check(
       "password",
       "La contraseña debe tener un minimo de 8 caracteres",
     ).isLength({ min: 8 }),
-    check("rol").custom(esRolValido),
+    check("rol", "El rol no es valido")
+      .isString()
+      .bail()
+      .custom(esRolValido),
     validarCampos,
   ],
   usuarioPost,
@@ -61,20 +68,32 @@ router.put(
   "/:id",
   [
     validarJWT,
-    check("id", "No es un id valido").isMongoId(),
-    check("id").custom(usuarioExiste),
+    check("id", "No es un id valido").isMongoId().bail().custom(usuarioExiste),
     check("nombre", "El nombre no puede estar vacio")
       .optional()
+      .isString()
+      .trim()
       .notEmpty(),
     check("apellido", "El apellido no puede estar vacio")
       .optional()
+      .isString()
+      .trim()
       .notEmpty(),
-    check("correo", "El correo no es valido").optional().isEmail(),
-    check("correo").optional().custom(emailExisteOtroUsuario),
+    check("correo", "El correo no es valido")
+      .optional()
+      .isString()
+      .trim()
+      .isEmail()
+      .bail()
+      .custom(emailExisteOtroUsuario),
     check("password", "La contraseña debe tener un minimo de 8 caracteres")
       .optional()
       .isLength({ min: 8 }),
-    check("rol").optional().custom(esRolValido),
+    check("rol", "El rol no es valido")
+      .optional()
+      .isString()
+      .bail()
+      .custom(esRolValido),
     validarCampos,
   ],
   usuarioPut,
@@ -85,8 +104,7 @@ router.patch(
   [
     validarJWT,
     esAdminRole,
-    check("id", "No es un id valido").isMongoId(),
-    check("id").custom(usuarioExiste),
+    check("id", "No es un id valido").isMongoId().bail().custom(usuarioExiste),
     validarCampos,
   ],
   usuarioEstado,
@@ -97,8 +115,7 @@ router.delete(
   [
     validarJWT,
     esAdminRole,
-    check("id", "No es un id valido").isMongoId(),
-    check("id").custom(usuarioExiste),
+    check("id", "No es un id valido").isMongoId().bail().custom(usuarioExiste),
     validarCampos,
   ],
   usuarioDelete,
