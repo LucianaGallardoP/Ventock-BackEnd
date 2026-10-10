@@ -11,6 +11,14 @@ const emailExiste = async (correo) => {
   }
 };
 
+const emailExisteOtroUsuario = async (correo, { req }) => {
+  if (!correo) return;
+  const existeEmail = await Usuario.findOne({ correo });
+  if (existeEmail && existeEmail.id !== req.params.id) {
+    throw new Error(`El correo ${correo} ya se encuentra en la base de datos.`);
+  }
+};
+
 const esRolValido = async (rol) => {
   const existeRol = await Rol.findOne({ rol });
   if (!existeRol) {
@@ -50,6 +58,7 @@ const ventaExiste = async (id) => {
 
 module.exports = {
   emailExiste,
+  emailExisteOtroUsuario,
   esRolValido,
   usuarioExiste,
   categoriaExiste,

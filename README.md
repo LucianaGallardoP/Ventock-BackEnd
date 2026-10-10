@@ -13,6 +13,10 @@ API REST para Ventock, gestor de ventas y stock. Maneja autenticación, usuarios
 
 npm install
 
+## Variables de entorno
+
+Copiá .env.example a .env y completá los valores. `MONGODB_CNN` y `SECRETORPRIVATEKEY` son obligatorias — el servidor no arranca sin ellas.
+
 ## Scripts
 
 Comando       | Descripción
