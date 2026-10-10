@@ -4,7 +4,8 @@ const AppError = require("../helpers/AppError");
 const { textoRequerido } = require("../helpers/sanitize");
 
 const productosGet = async (req = request, res = response) => {
-  const { desde = 0, limite = 20 } = req.query;
+  const desde = Number(req.query.desde ?? 0);
+  const limite = Number(req.query.limite ?? 20);
   const query = { estado: true };
 
   const [total, productos] = await Promise.all([

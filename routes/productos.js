@@ -12,10 +12,15 @@ const { check } = require("express-validator");
 const { productoExiste, categoriaExiste } = require("../helpers/db-validator");
 const { validarCampos } = require("../middlewares/validarCampos");
 const { esAdminRole } = require("../middlewares/validarRoles");
+const { validarPaginacion } = require("../middlewares/validarPaginacion");
 
 const router = Router();
 
-router.get("/", [validarJWT], productosGet);
+router.get(
+  "/",
+  [validarJWT, ...validarPaginacion, validarCampos],
+  productosGet,
+);
 
 router.get(
   "/:id",
